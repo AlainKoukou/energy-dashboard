@@ -10,7 +10,7 @@ import {
   ResponsiveContainer
 } from "recharts";
 
-const socket = io("http://localhost:3000");
+const socket = io("https://energy-dashboard-1-anav.onrender.com/");
 const GAUGE_CONFIG = {
   voltage: { min: 200, max: 260, unit: "V", label: "Voltage RMS" },
   current: { min: 0, max: 10, unit: "A", label: "Current RMS" },
@@ -545,7 +545,7 @@ function App() {
   }
 
   useEffect(() => {
-    fetch("http://localhost:3000/api/latest")
+    fetch("https://energy-dashboard-1-anav.onrender.com/api/latest")
       .then((res) => res.json())
       .then((result) => {
         if (!result.message) {
@@ -554,7 +554,7 @@ function App() {
         }
       });
 
-    fetch("http://localhost:3000/api/history")
+    fetch("https://energy-dashboard-1-anav.onrender.com/api/history")
       .then((res) => res.json())
       .then((result) => {
         setHistory(result);
