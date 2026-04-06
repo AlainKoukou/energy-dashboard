@@ -229,13 +229,19 @@ app.post("/api/data", (req, res) => {
 
 // Socket.IO connection
 io.on("connection", (socket) => {
-  console.log("User connected:", socket.id);
+  console.log("A client connected to the Engine");
 
-  socket.on("disconnect", () => {
-    console.log("User disconnected:", socket.id);
+  // LISTEN for data coming from simulator
+  socket.on("data:send", (incomingData) => {
+    // 1. Process/Normalize the data
+    const processedData = normalizePacket(incomingData);
+    
+    // 2. BROADCAST the processed data to the Vercel Dashboard
+    io.emit("data:update", processedData); 
+    
+    console.log(`Forwarding data: ${processedData.power}W to Dashboard`);
   });
 });
-
 // server.listen(3000, () => {
 //   console.log("Server running on port 3000");
 // });
