@@ -4,7 +4,10 @@ import {
   AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer
 } from "recharts";
 
-const socket = io("https://energy-dashboard-1-anav.onrender.com");
+const socket = io("https://energy-dashboard-1-anav.onrender.com",{
+  transports: ["websocket"],
+  update: false
+});
 
 function App() {
   const [data, setData] = useState(null);

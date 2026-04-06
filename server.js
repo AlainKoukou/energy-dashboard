@@ -8,7 +8,7 @@ const server = http.createServer(app);
 
 const io = require("socket.io")(server, {
   cors: {
-    origin: "http://localhost:5173", // Allow your Vite frontend
+    origin: "https://energy-dashboard-lt18hfcot-alainkoukous-projects.vercel.app", // Allow your Vite frontend
     methods: ["GET", "POST"]
   }
 });
