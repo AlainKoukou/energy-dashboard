@@ -1,5 +1,5 @@
 const mqtt = require("mqtt");
-const client = mqtt.connect("mqtt://localhost:1883");
+const client = mqtt.connect("https://energy-dashboard-1-anav.onrender.com/");
 
 const TOPIC = "cce3/device01/telemetry";
 

@@ -14,9 +14,21 @@ const io = require("socket.io")(server, {
 });
 
 // MQTT connection
-const client = mqtt.connect("mqtt://localhost:1883"); // replace with Hassan's broker IP later
-const MQTT_TOPIC = "cce3/device01/telemetry"; // replace with the real topic later
+// NEW Safe MQTT Connection
 
+const client = mqtt.connect(process.env.MQTT_BROKER_URL || "mqtt://localhost:1883", {
+  connectTimeout: 5000, // Stop trying after 5 seconds
+  reconnectPeriod: 10000 // Only try again every 10 seconds
+});
+
+client.on("connect", () => {
+  console.log("✅ Connected to MQTT Broker successfully");
+});
+
+client.on("error", (err) => {
+  console.log("⚠️ MQTT not available yet, waiting for Hassan's IP...");
+  // This prevents the "Connection Error" loop from crashing the server
+});
 app.use(cors());
 app.use(express.json());
 
