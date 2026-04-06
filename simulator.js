@@ -3,10 +3,10 @@ const { io } = require("socket.io-client");
 // Connect directly to your Render Engine
 const socket = io("https://energy-dashboard-1-anav.onrender.com");
 
-console.log("🚀 Simulator starting... Connecting to Render...");
+console.log("Simulator starting... Connecting to Render...");
 
 socket.on("connect", () => {
-    console.log("✅ Connected to Render! Sending real-time packets...");
+    console.log("Connected to Render! Sending real-time packets...");
     
     let cumulativeEnergy = 12.4;
 
@@ -33,10 +33,10 @@ socket.on("connect", () => {
 
         // Emit the data just like the backend expects
         socket.emit("data:send", mockData); 
-        console.log(`📡 Packet Sent: ${power.toFixed(1)}W | ${vrms.toFixed(1)}V`);
+        console.log(`Packet Sent: ${power.toFixed(1)}W | ${vrms.toFixed(1)}V`);
     }, 2000);
 });
 
 socket.on("connect_error", (err) => {
-    console.log("❌ Connection failed: " + err.message);
+    console.log("Connection failed: " + err.message);
 });
