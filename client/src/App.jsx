@@ -1,945 +1,236 @@
 import { useEffect, useState } from "react";
 import { io } from "socket.io-client";
 import {
-  LineChart,
-  Line,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip,
-  ResponsiveContainer
+  AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer
 } from "recharts";
 
-const socket = io("https://energy-dashboard-1-anav.onrender.com/");
-const GAUGE_CONFIG = {
-  voltage: { min: 200, max: 260, unit: "V", label: "Voltage RMS" },
-  current: { min: 0, max: 10, unit: "A", label: "Current RMS" },
-  power: { min: 0, max: 2000, unit: "W", label: "Power" },
-  energy: { min: 0, max: 500, unit: "kWh", label: "Energy" }
-};
-
-function Card({ title, value, unit, status, action }) {
-  let borderColor = "#22c55e";
-
-  if (status === "warning") borderColor = "#f59e0b";
-  if (status === "critical") borderColor = "#ef4444";
-
-  const formattedValue =
-    typeof value === "number" ? value.toFixed(2) : value;
-
-  return (
-    <div
-      style={{
-        background: "#1e293b",
-        padding: "20px",
-        borderRadius: "12px",
-        color: "white",
-        boxSizing: "border-box",
-        border: `3px solid ${borderColor}`,
-        boxShadow: "0 4px 12px rgba(0,0,0,0.25)"
-      }}
-    >
-      <div
-        style={{
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "flex-start",
-          gap: "12px"
-        }}
-      >
-        <p
-          style={{
-            margin: 0,
-            fontSize: "18px",
-            color: "#94a3b8",
-            letterSpacing: "0.5px"
-          }}
-        >
-          {title}
-        </p>
-
-        {action && <div>{action}</div>}
-      </div>
-
-      <div
-        style={{
-          marginTop: "14px",
-          display: "flex",
-          alignItems: "baseline",
-          gap: "8px"
-        }}
-      >
-        <span
-          style={{
-            fontSize: "32px",
-            fontWeight: "bold",
-            lineHeight: 1
-          }}
-        >
-          {formattedValue}
-        </span>
-
-        <span
-          style={{
-            fontSize: "18px",
-            color: "#cbd5e1"
-          }}
-        >
-          {unit}
-        </span>
-      </div>
-    </div>
-  );
-}
-function GaugeCard({ title, value, unit, min, max, status }) {
-  let accentColor = "#22c55e";
-
-  if (status === "warning") accentColor = "#f59e0b";
-  if (status === "critical") accentColor = "#ef4444";
-
-  const formattedValue =
-    typeof value === "number" ? value.toFixed(2) : value;
-
-  const centerX = 140;
-  const centerY = 150;
-  const radius = 95;
-
-  const polarToCartesian = (cx, cy, r, angleDeg) => {
-    const angleRad = (Math.PI / 180) * angleDeg;
-    return {
-      x: cx + r * Math.cos(angleRad),
-      y: cy + r * Math.sin(angleRad)
-    };
-  };
-
-  const describeArc = (cx, cy, r, startAngle, endAngle) => {
-    const start = polarToCartesian(cx, cy, r, endAngle);
-    const end = polarToCartesian(cx, cy, r, startAngle);
-    const largeArcFlag = endAngle - startAngle <= 180 ? "0" : "1";
-
-    return [
-      "M", start.x, start.y,
-      "A", r, r, 0, largeArcFlag, 0, end.x, end.y
-    ].join(" ");
-  };
-
-  const isOutOfRange = value < min || value > max;
-
-  let needleAngle;
-  let needleColor = accentColor;
-  let needleOpacity = 1;
-
-  if (isOutOfRange) {
-    needleAngle = 90;
-    needleColor = "#ef4444";
-    needleOpacity = 0.65;
-  } else {
-    const ratio = (value - min) / (max - min);
-    needleAngle = 180 + ratio * 180;
-  }
-
-  const needleTip = polarToCartesian(centerX, centerY, radius - 12, needleAngle);
-
-  return (
-    <div
-      style={{
-        background: "#1e293b",
-        borderRadius: "14px",
-        padding: "18px",
-        color: "white",
-        border: `3px solid ${accentColor}`,
-        boxShadow: "0 4px 12px rgba(0,0,0,0.25)"
-      }}
-    >
-      <div
-        style={{
-          marginBottom: "8px",
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "center"
-        }}
-      >
-        <p
-          style={{
-            margin: 0,
-            fontSize: "18px",
-            color: "#94a3b8",
-            letterSpacing: "0.5px"
-          }}
-        >
-          {title}
-        </p>
-
-        <span
-          style={{
-            fontSize: "16px",
-            color: isOutOfRange ? "#fca5a5" : "#94a3b8",
-            fontWeight: 600
-          }}
-        >
-          {min}–{max} {unit}
-        </span>
-      </div>
-
-      <div style={{ width: "100%", display: "flex", justifyContent: "center" }}>
-        <svg width="280" height="170" viewBox="0 0 280 170">
-          <path
-            d={describeArc(centerX, centerY, radius, 180, 360)}
-            fill="none"
-            stroke="#334155"
-            strokeWidth="16"
-            strokeLinecap="round"
-          />
-
-          <path
-            d={describeArc(centerX, centerY, radius, 180, 240)}
-            fill="none"
-            stroke="#22c55e"
-            strokeWidth="16"
-            strokeLinecap="round"
-            opacity="0.9"
-          />
-          <path
-            d={describeArc(centerX, centerY, radius, 240, 315)}
-            fill="none"
-            stroke="#f59e0b"
-            strokeWidth="16"
-            strokeLinecap="round"
-            opacity="0.9"
-          />
-          <path
-            d={describeArc(centerX, centerY, radius, 315, 360)}
-            fill="none"
-            stroke="#ef4444"
-            strokeWidth="16"
-            strokeLinecap="round"
-            opacity="0.9"
-          />
-
-          {[0, 0.25, 0.5, 0.75, 1].map((t, index) => {
-            const angle = 180 + t * 180;
-            const p1 = polarToCartesian(centerX, centerY, radius - 4, angle);
-            const p2 = polarToCartesian(centerX, centerY, radius - 18, angle);
-
-            return (
-              <line
-                key={index}
-                x1={p1.x}
-                y1={p1.y}
-                x2={p2.x}
-                y2={p2.y}
-                stroke="#cbd5e1"
-                strokeWidth="2"
-                opacity="0.8"
-              />
-            );
-          })}
-
-          <line
-            x1={centerX}
-            y1={centerY}
-            x2={needleTip.x}
-            y2={needleTip.y}
-            stroke={needleColor}
-            strokeWidth="4"
-            strokeLinecap="round"
-            opacity={needleOpacity}
-          />
-
-          <circle
-            cx={centerX}
-            cy={centerY}
-            r="7"
-            fill={needleColor}
-            opacity={needleOpacity}
-          />
-
-          <text
-            x="9"
-            y="150"
-            fill="#1bbda2"
-            fontSize="16"
-            fontWeight="600"
-          >
-            {min}
-          </text>
-
-          <text
-            x="245"
-            y="150"
-            fill="#ff0000"
-            fontSize="14"
-            fontWeight="600"
-          >
-            {max}
-          </text>
-        </svg>
-      </div>
-
-      <div
-        style={{
-          marginTop: "-8px",
-          textAlign: "center"
-        }}
-      >
-        <div
-          style={{
-            fontSize: "34px",
-            fontWeight: "bold",
-            lineHeight: 1
-          }}
-        >
-          {formattedValue}
-          <span
-            style={{
-              marginLeft: "8px",
-              fontSize: "18px",
-              color: "#cbd5e1",
-              fontWeight: "normal"
-            }}
-          >
-            {unit}
-          </span>
-        </div>
-
-        {isOutOfRange && (
-          <div
-            style={{
-              marginTop: "8px",
-              color: "#fca5a5",
-              fontSize: "14px",
-              fontWeight: "600"
-            }}
-          >
-            OUT OF RANGE
-          </div>
-        )}
-      </div>
-    </div>
-  );
-}
-function SystemStatus({ anomalies }) {
-  if (!anomalies) return null;
-
-  const active = [];
-
-  if (anomalies.voltage) active.push("Voltage anomaly detected");
-  if (anomalies.current) active.push("Current anomaly detected");
-  if (anomalies.powerSpike) active.push("Power spike detected");
-  if (anomalies.powerInstability) active.push("Power instability detected");
-  if (anomalies.sensorFault) active.push("Sensor fault detected");
-  if (anomalies.energyAnomaly) active.push("Energy anomaly detected");
-
-  let systemState = "NORMAL";
-  let stateColor = "#22c55e";
-
-  if (active.length > 0) {
-    systemState = "WARNING";
-    stateColor = "#f59e0b";
-  }
-
-  if (anomalies.sensorFault) {
-    systemState = "CRITICAL";
-    stateColor = "#ef4444";
-  }
-
-  return (
-    <div
-      style={{
-        background: "#1e293b",
-        marginTop: 0,
-        padding: "20px",
-        borderRadius: "10px",
-        color: "white"
-      }}
-    >
-      <h2 style={{ marginTop: 0, marginBottom: "15px" }}>
-        SYSTEM STATUS: <span style={{ color: stateColor }}>{systemState}</span>
-      </h2>
-
-      {active.length === 0 ? (
-        <p style={{ color: "#22c55e", margin: 0 }}>• No active anomalies</p>
-      ) : (
-        active.map((message, index) => (
-          <p key={index} style={{ margin: "8px 0", color: stateColor }}>
-            • {message}
-          </p>
-        ))
-      )}
-    </div>
-  );
-}
-
-function AnomalyPanel({ anomalies }) {
-  if (!anomalies) return null;
-
-  const anomalyItems = [
-    { label: "Voltage Anomaly", active: anomalies.voltage },
-    { label: "Current Anomaly", active: anomalies.current },
-    { label: "Power Spike", active: anomalies.powerSpike },
-    { label: "Power Instability", active: anomalies.powerInstability },
-    { label: "Sensor Fault", active: anomalies.sensorFault },
-    { label: "Energy Anomaly", active: anomalies.energyAnomaly }
-  ];
-
-  return (
-    <div
-      style={{
-        background: "#1e293b",
-        padding: "20px",
-        borderRadius: "10px",
-        color: "white"
-      }}
-    >
-      <h2 style={{ marginTop: 0, marginBottom: "16px" }}>Anomaly Indicators</h2>
-
-      <div
-        style={{
-          display: "grid",
-          gridTemplateColumns: "repeat(3, minmax(0, 1fr))",
-          gap: "12px"
-        }}
-      >
-        {anomalyItems.map((item, index) => {
-          const isActive = item.active;
-          const badgeBg = isActive ? "#7f1d1d" : "#14532d";
-          const badgeColor = isActive ? "#fecaca" : "#bbf7d0";
-          const dotColor = isActive ? "#ef4444" : "#22c55e";
-
-          return (
-            <div
-              key={index}
-              style={{
-                background: "#0f172a",
-                border: "1px solid #334155",
-                borderRadius: "999px",
-                padding: "14px 18px",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "space-between",
-                gap: "12px"
-              }}
-            >
-              <div
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  gap: "10px",
-                  minWidth: 0
-                }}
-              >
-                <span
-                  style={{
-                    width: "10px",
-                    height: "10px",
-                    borderRadius: "50%",
-                    background: dotColor,
-                    flexShrink: 0
-                  }}
-                />
-
-                <span
-                  style={{
-                    color: "#e2e8f0",
-                    fontSize: "16px",
-                    fontWeight: "500"
-                  }}
-                >
-                  {item.label}
-                </span>
-              </div>
-
-              <span
-                style={{
-                  background: badgeBg,
-                  color: badgeColor,
-                  padding: "4px 10px",
-                  borderRadius: "999px",
-                  fontSize: "14px",
-                  fontWeight: "600",
-                  whiteSpace: "nowrap"
-                }}
-              >
-                {isActive ? "ACTIVE" : "NORMAL"}
-              </span>
-            </div>
-          );
-        })}
-      </div>
-    </div>
-  );
-}
-
-function buildEvents(history) {
-  const events = [];
-
-  [...history].reverse().forEach((item) => {
-    const time = item.timestamp ? item.timestamp.slice(11, 16) : "Now";
-    const anomalies = item.anomalies || {};
-
-    if (anomalies.sensorFault) {
-      events.push({ time, message: "Sensor fault detected" });
-    }
-    if (anomalies.voltage) {
-      events.push({ time, message: "Voltage anomaly detected" });
-    }
-    if (anomalies.current) {
-      events.push({ time, message: "Current anomaly detected" });
-    }
-    if (anomalies.powerSpike) {
-      events.push({ time, message: "Power spike detected" });
-    }
-    if (anomalies.powerInstability) {
-      events.push({ time, message: "Power instability detected" });
-    }
-    if (anomalies.energyAnomaly) {
-      events.push({ time, message: "Energy anomaly detected" });
-    }
-  });
-
-  return events.slice(0, 10);
-}
-
-function computeCumulativeDeltaP(history) {
-  if (history.length < 2) return 0;
-
-  let totalVariation = 0;
-
-  for (let i = 1; i < history.length; i++) {
-    const current = history[i]?.power ?? 0;
-    const previous = history[i - 1]?.power ?? 0;
-    totalVariation += Math.abs(current - previous);
-  }
-
-  return totalVariation;
-}
-
-function computeSigmaP(history) {
-  if (history.length === 0) return 0;
-
-  const values = history.map((item) => item.power ?? 0);
-  const mean = values.reduce((sum, v) => sum + v, 0) / values.length;
-
-  const variance =
-    values.reduce((sum, v) => sum + Math.pow(v - mean, 2), 0) / values.length;
-
-  return Math.sqrt(variance);
-}
-
-function computeAveragePower(history) {
-  if (history.length === 0) return 0;
-
-  const values = history.map((item) => item.power ?? 0);
-  return values.reduce((sum, v) => sum + v, 0) / values.length;
-}
+const socket = io("http://localhost:3000");
 
 function App() {
   const [data, setData] = useState(null);
   const [history, setHistory] = useState([]);
-  const [isConnected, setIsConnected] = useState(false);
-  const [lastUpdate, setLastUpdate] = useState("No data yet");
-  const [selectedChart, setSelectedChart] = useState("power");
-
-  function handleResetHistory() {
-    setHistory(data ? [data] : []);
-  }
+  const [anomalies, setAnomalies] = useState([]);
+  const [activeMetric, setActiveMetric] = useState("power");
+  const [showAdvanced, setShowAdvanced] = useState(false);
 
   useEffect(() => {
-    fetch("https://energy-dashboard-1-anav.onrender.com/api/latest")
-      .then((res) => res.json())
-      .then((result) => {
-        if (!result.message) {
-          setData(result);
-          setLastUpdate(result.timestamp ? result.timestamp.slice(11, 16) : "Now");
-        }
-      });
-
-    fetch("https://energy-dashboard-1-anav.onrender.com/api/history")
-      .then((res) => res.json())
-      .then((result) => {
-        setHistory(result);
-      });
-
-    socket.on("connect", () => {
-      setIsConnected(true);
-    });
-
-    socket.on("disconnect", () => {
-      setIsConnected(false);
-    });
-
     socket.on("data:update", (newData) => {
-      setData(newData);
-      setLastUpdate(newData.timestamp ? newData.timestamp.slice(11, 16) : "Now");
+      // Data normalization for local state
+      const timestamp = new Date().toLocaleTimeString([], { hour12: false, minute: '2-digit', second: '2-digit' });
+      const dataWithTime = { ...newData, time: timestamp };
 
+      setData(dataWithTime);
       setHistory((prev) => {
-        const updated = [...prev, newData];
-        if (updated.length > 20) updated.shift();
-        return updated;
+        const updated = [...prev, dataWithTime];
+        return updated.length > 25 ? updated.slice(1) : updated;
       });
-    });
 
-    return () => {
-      socket.off("connect");
-      socket.off("disconnect");
-      socket.off("data:update");
-    };
+      // Unified Anomaly/Event Logger
+      if (newData.system_status !== "Normal" ) {
+        setAnomalies(prev => {
+          
+            if (prev.length > 0 && prev[0].type === newData.fault_type && prev[0].time === timestamp) {
+            return prev;
+          }
+          return[ 
+            {
+              time: timestamp,
+              type: newData.fault_type,
+              value: newData.power,
+              status: newData.system_status
+            },
+            ...prev.slice(0, 5)
+          ];
+        });
+      }
+    });
+    return () => socket.off("data:update");
   }, []);
 
-  const chartData = history.map((item, index) => ({
-    time: item.timestamp ? item.timestamp.slice(11, 16) : `P${index + 1}`,
-    power: item.power,
-    voltage: item.vrms,
-    current: item.irms
-  }));
+  if (!data) return (
+    <div style={{ background: "#020617", height: "100vh", display: "flex", alignItems: "center", justifyContent: "center", color: "white", fontSize: "24px" }}>
+      Establishing High-Speed Link...
+    </div>
+  );
 
-  const events = buildEvents(history);
-  const cumulativeDeltaP = computeCumulativeDeltaP(history);
-  const sigmaP = computeSigmaP(history);
-  const averagePower = computeAveragePower(history);
-
-  const sigmaWarningThreshold = 0.05 * averagePower;
-  const sigmaCriticalThreshold = 0.1 * averagePower;
-
-  let sigmaStatus = "normal";
-
-  if (sigmaP > sigmaCriticalThreshold) {
-    sigmaStatus = "critical";
-  } else if (sigmaP > sigmaWarningThreshold) {
-    sigmaStatus = "warning";
-  }
-
-  let chartColor = "#f59e0b";
-  if (selectedChart === "voltage") chartColor = "#3b82f6";
-  if (selectedChart === "current") chartColor = "#ef4444";
-
-  let chartUnit = "W";
-  if (selectedChart === "voltage") chartUnit = "V";
-  if (selectedChart === "current") chartUnit = "A";
-
-  let chartTitle = "Power Trend";
-  let currentChartValue = data?.power ?? 0;
-
-  if (selectedChart === "voltage") {
-    chartTitle = "Voltage Trend";
-    currentChartValue = data?.vrms ?? 0;
-  }
-
-  if (selectedChart === "current") {
-    chartTitle = "Current Trend";
-    currentChartValue = data?.irms ?? 0;
-  }
-
-  const formattedChartValue =
-    typeof currentChartValue === "number"
-      ? currentChartValue.toFixed(2)
-      : currentChartValue;
+  // Status and Color Mapping
+  const status = data.system_status || "Normal";
+  const statusColors = {
+    Normal: "#22c55e",
+    Unknown: "#f59e0b",
+    Anomaly: "#ef4444"
+  };
 
   return (
-    <div
-      style={{
-        padding: "24px",
-        fontFamily: "Arial, sans-serif",
-        background: "#0f172a",
-        minHeight: "100vh",
-        color: "white",
-        boxSizing: "border-box"
-      }}
-    >
-      <div
-        style={{
-          width: "100%",
-          maxWidth: "1800px",
-          margin: "0 auto"
-        }}
-      >
-        <div
-          style={{
-            background: "#1e293b",
-            padding: "20px 24px",
-            borderRadius: "12px",
-            marginBottom: "24px",
-            display: "flex",
-            justifyContent: "space-between",
-            alignItems: "center",
-            flexWrap: "wrap",
-            gap: "12px"
-          }}
-        >
-          <div>
-            <h1 style={{ margin: 0 }}>Energy Monitoring Dashboard</h1>
-            <p style={{ margin: "8px 0 0 0", color: "#94a3b8" }}>
-              Real-time monitoring of electrical parameters
-            </p>
+    <div style={{ 
+      background: "#020617", 
+      minHeight: "100vh", 
+      color: "#f8fafc", 
+      fontFamily: "'Segoe UI', Roboto, Helvetica, Arial, sans-serif",
+      padding: "40px", 
+      fontSize: "18px" 
+    }}>
+      
+      {/* --- HEADER (Updated with 3-State Logic) --- */}
+      <header style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "40px" }}>
+        <div>
+          <h1 style={{ margin: 0, fontSize: "42px", fontWeight: "800", letterSpacing: "-1px" }}>
+            Energy Command <span style={{color: "#3b82f6"}}>PRO</span>
+          </h1>
+          <p style={{ color: "#94a3b8", fontSize: "20px", marginTop: "8px" }}>
+            Unit Status: <span style={{color: statusColors[status]}}>{status.toUpperCase()}</span>
+          </p>
+        </div>
+        
+        <div style={{
+          background: statusColors[status],
+          padding: "20px 40px",
+          borderRadius: "16px",
+          boxShadow: status === "Anomaly" ? "0 0 40px #ef4444" : "none",
+          animation: status === "Anomaly" ? "pulse 1s infinite" : "none",
+          transition: "all 0.5s ease"
+        }}>
+          <span style={{ fontWeight: "900", fontSize: "22px", color: "#fff" }}>
+            {status === "Normal" ? "SYSTEM STABLE" : status === "Unknown" ? "PATTERN UNKNOWN" : "ALARM ACTIVE"}
+          </span>
+        </div>
+      </header>
+
+      {/* --- LEVEL 1: LARGE GAUGES --- */}
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(320px, 1fr))", gap: "30px", marginBottom: "40px" }}>
+        <GaugeCard title="Voltage" value={data.vrms} unit="V" min={210} max={250} color="#3b82f6" peakMin={data.peaks?.v_min} peakMax={data.peaks?.v_max}/>
+        <GaugeCard title="Current (Irms)" value={data.irms} unit="A" min={0} max={10} color="#10b981" peakMin={data.peaks?.i_min} peakMax={data.peaks?.i_max} />
+        <GaugeCard title="Active Power" value={data.power} unit="W" min={0} max={3000} color="#f59e0b" peakMax={data.peaks?.p_max} />
+        <GaugeCard title="Total Energy" value={data.energy} unit="Wh" min={0} max={30000} color="#8b5cf6" />
+      </div>
+
+      <div style={{ display: "grid", gridTemplateColumns: "1.5fr 1fr", gap: "30px", marginBottom: "40px" }}>
+        {/* --- CHART SECTION --- */}
+        <div style={{ background: "#0f172a", padding: "30px", borderRadius: "24px", border: "1px solid #1e293b" }}>
+          <div style={{display: "flex", justifyContent: "space-between", marginBottom: "30px", alignItems: "center"}}>
+             <h2 style={{margin: 0, fontSize: "24px"}}>Telemetry History</h2>
+             <div style={{ display: "flex", gap: "10px" }}>
+                {['power', 'vrms', 'irms'].map(m => (
+                  <button 
+                    key={m} 
+                    onClick={() => setActiveMetric(m)} 
+                    style={{
+                      background: activeMetric === m ? "#3b82f6" : "#1e293b", 
+                      border: "none", color: "white", padding: "10px 20px", borderRadius: "8px", cursor: "pointer", fontWeight: "bold"
+                    }}
+                  >
+                    {m.toUpperCase()}
+                  </button>
+                ))}
+             </div>
           </div>
-
-          <div
-            style={{
-              padding: "18px 18px",
-              borderRadius: "999px",
-              background: "#0f172a",
-              fontWeight: "bold",
-              minWidth: "220px"
-            }}
-          >
-            <div
-              style={{
-                color: data
-                  ? isConnected
-                    ? "#22c55e"
-                    : "#ef4444"
-                  : "#f59e0b"
-              }}
-            >
-              ● {data ? (isConnected ? "ONLINE" : "DISCONNECTED") : "WAITING FOR DATA"}
-            </div>
-
-            <div
-              style={{
-                marginTop: "6px",
-                fontSize: "18px",
-                color: "#94a3b8",
-                fontWeight: "normal"
-              }}
-            >
-              Last update: {lastUpdate}
-            </div>
+          <div style={{ height: "350px" }}>
+            <ResponsiveContainer width="100%" height="100%">
+              <AreaChart data={history}>
+                <defs>
+                  <linearGradient id="colorMain" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.4}/>
+                    <stop offset="95%" stopColor="#3b82f6" stopOpacity={0}/>
+                  </linearGradient>
+                </defs>
+                <CartesianGrid strokeDasharray="3 3" stroke="#1e293b" vertical={false} />
+                <XAxis dataKey="time" stroke="#94a3b8" fontSize={14} tickMargin={15} />
+                <YAxis stroke="#94a3b8" fontSize={14} tickMargin={10} />
+                <Tooltip contentStyle={{background: "#0f172a", border: "1px solid #334155", borderRadius: "12px"}} />
+                <Area type="monotone" dataKey={activeMetric} stroke="#3b82f6" fill="url(#colorMain)" strokeWidth={4} />
+              </AreaChart>
+            </ResponsiveContainer>
           </div>
         </div>
 
-        {data ? (
-          <>
-            <div
-              style={{
-                display: "grid",
-                gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))",
-                gap: "20px",
-                marginBottom: "20px"
-              }}
-            >
-              <GaugeCard
-                title={GAUGE_CONFIG.voltage.label}
-                value={data.vrms}
-                unit={GAUGE_CONFIG.voltage.unit}
-                min={GAUGE_CONFIG.voltage.min}
-                max={GAUGE_CONFIG.voltage.max}
-                status={data.anomalies?.voltage ? "warning" : "normal"}
-              />
-
-              <GaugeCard
-                title={GAUGE_CONFIG.current.label}
-                value={data.irms}
-                unit={GAUGE_CONFIG.current.unit}
-                min={GAUGE_CONFIG.current.min}
-                max={GAUGE_CONFIG.current.max}
-                status={data.anomalies?.current ? "critical" : "normal"}
-              />
-
-              <GaugeCard
-                title={GAUGE_CONFIG.power.label}
-                value={data.power}
-                unit={GAUGE_CONFIG.power.unit}
-                min={GAUGE_CONFIG.power.min}
-                max={GAUGE_CONFIG.power.max}
-                status={data.anomalies?.powerSpike ? "warning" : "normal"}
-              />
-
-              <GaugeCard
-                title={GAUGE_CONFIG.energy.label}
-                value={data.energy}
-                unit={GAUGE_CONFIG.energy.unit}
-                min={GAUGE_CONFIG.energy.min}
-                max={GAUGE_CONFIG.energy.max}
-                status={data.anomalies?.energyAnomaly ? "warning" : "normal"}
-              />
-            </div>
-
-            <div
-              style={{
-                display: "grid",
-                gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))",
-                gap: "20px",
-                marginBottom: "24px"
-              }}
-            >
-              <Card
-                title="Cumulative Power Variation"
-                value={cumulativeDeltaP}
-                unit="W"
-                status={cumulativeDeltaP > 800 ? "warning" : "normal"}
-                action={
-                  <button
-                    onClick={handleResetHistory}
-                    style={{
-                      background: "#7f1d1d",
-                      color: "#fecaca",
-                      border: "1px solid #b91c1c",
-                      borderRadius: "8px",
-                      padding: "4px 10px",
-                      fontSize: "18px",
-                      fontWeight: "600",
-                      cursor: "pointer",
-                      transition: "0.2s ease"
-                    }}
-                  >
-                    Reset
-                  </button>
-                }
-              />
-
-              <Card
-                title="Power Stability (σP)"
-                value={sigmaP}
-                unit="W"
-                status={sigmaStatus}
-              />
-            </div>
-
-            <div
-              style={{
-                background: "#1e293b",
-                padding: "20px",
-                borderRadius: "12px",
-                marginBottom: "24px"
-              }}
-            >
-              <div
-                style={{
-                  display: "flex",
-                  justifyContent: "space-between",
-                  alignItems: "center",
-                  marginBottom: "10px",
-                  flexWrap: "wrap",
-                  gap: "10px"
-                }}
-              >
-                <div>
-                  <h2 style={{ margin: 0 }}>{chartTitle}</h2>
-                  <p style={{ margin: "6px 0 0 0", color: "#94a3b8", fontSize: "18px" }}>
-                    Current Value: {formattedChartValue} {chartUnit}
-                  </p>
+        {/* --- EVENT MEMORY --- */}
+        <div style={{ background: "#0f172a", padding: "30px", borderRadius: "24px", border: "1px solid #1e293b" }}>
+          <h2 style={{ margin: "0 0 20px 0", fontSize: "24px", color: "#ef4444" }}>Event Memory</h2>
+          <div style={{ display: "flex", flexDirection: "column", gap: "15px" }}>
+            {anomalies.length === 0 ? (
+              <p style={{color: "#475569"}}>No events detected in current session.</p>
+            ) : (
+              anomalies.map((ann, i) => (
+                <div key={i} style={{ 
+                  padding: "15px", 
+                  background: "#1e293b", 
+                  borderRadius: "12px", 
+                  borderLeft: `5px solid ${statusColors[ann.status] || "#ef4444"}` 
+                }}>
+                  <div style={{fontSize: "14px", color: "#94a3b8"}}>{ann.time}</div>
+                  <div style={{fontWeight: "bold", fontSize: "18px"}}>{ann.type}</div>
+                  <div style={{fontSize: "16px"}}>Value Recorded: {ann.value}W</div>
                 </div>
+              ))
+            )}
+          </div>
+        </div>
+      </div>
 
-                <div style={{ display: "flex", gap: "10px" }}>
-                  <button
-                    onClick={() => setSelectedChart("power")}
-                    style={{
-                      padding: "6px 12px",
-                      borderRadius: "6px",
-                      border: "none",
-                      cursor: "pointer",
-                      background: selectedChart === "power" ? "#f59e0b" : "#334155",
-                      color: "white"
-                    }}
-                  >
-                    Power
-                  </button>
+      {/* --- LEVEL 2: ENGINEERING DETAILS --- */}
+      <div style={{ background: "#1e293b", borderRadius: "20px", overflow: "hidden" }}>
+        <button onClick={() => setShowAdvanced(!showAdvanced)} style={{ width: "100%", padding: "25px", background: "none", border: "none", color: "#94a3b8", cursor: "pointer", textAlign: "left", fontSize: "18px", fontWeight: "bold" }}>
+           {showAdvanced ? "▼ HIDE ENGINEERING DIAGNOSTICS" : "▶ SHOW ENGINEERING DIAGNOSTICS (LEVEL 2)"}
+        </button>
+        {showAdvanced && (
+          <div style={{ padding: "40px", background: "#020617", display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: "25px", borderTop: "2px solid #334155" }}>
+             <TechStat label="Power Factor (PF)" value={data.power_factor} unit="" />
+             <TechStat label="Apparent Power (S)" value={data.features?.s_apparent} unit="VA" />
+             <TechStat label="Reactive Power (Q)" value={data.features?.q_reactive} unit="VAR" />
+             <TechStat label="System Frequency" value={data.frequency} unit="Hz" />
 
-                  <button
-                    onClick={() => setSelectedChart("voltage")}
-                    style={{
-                      padding: "6px 12px",
-                      borderRadius: "6px",
-                      border: "none",
-                      cursor: "pointer",
-                      background: selectedChart === "voltage" ? "#f59e0b" : "#334155",
-                      color: "white"
-                    }}
-                  >
-                    Voltage
-                  </button>
-
-                  <button
-                    onClick={() => setSelectedChart("current")}
-                    style={{
-                      padding: "6px 12px",
-                      borderRadius: "6px",
-                      border: "none",
-                      cursor: "pointer",
-                      background: selectedChart === "current" ? "#f59e0b" : "#334155",
-                      color: "white"
-                    }}
-                  >
-                    Current
-                  </button>
-                </div>
-              </div>
-
-              <div style={{ width: "100%", height: 320 }}>
-                <ResponsiveContainer>
-                  <LineChart data={chartData}>
-                    <CartesianGrid strokeDasharray="3 3" />
-                    <XAxis dataKey="time" stroke="white" />
-                    <YAxis
-                      stroke="white"
-                      tickFormatter={(value) => `${value} ${chartUnit}`}
-                    />
-                    <Tooltip
-                      contentStyle={{
-                        backgroundColor: "#0f172a",
-                        border: "1px solid #334155",
-                        borderRadius: "10px",
-                        color: "white"
-                      }}
-                      labelFormatter={(label) => `Time: ${label}`}
-                      formatter={(value) => {
-                        const name =
-                          selectedChart === "power"
-                            ? "Power"
-                            : selectedChart === "voltage"
-                              ? "Voltage"
-                              : "Current";
-
-                        return [`${value} ${chartUnit}`, name];
-                      }}
-                    />
-                    <Line
-                      type="monotone"
-                      dataKey={selectedChart}
-                      stroke={chartColor}
-                      strokeWidth={3}
-                    />
-                  </LineChart>
-                </ResponsiveContainer>
-              </div>
-            </div>
-
-            <div
-              style={{
-                display: "grid",
-                gridTemplateColumns: "1fr",
-                gap: "24px"
-              }}
-            >
-              <SystemStatus anomalies={data.anomalies} />
-              <AnomalyPanel anomalies={data.anomalies} />
-
-              <div
-                style={{
-                  background: "#1e293b",
-                  marginTop: 0,
-                  padding: "20px",
-                  borderRadius: "10px",
-                  color: "white"
-                }}
-              >
-                <h2 style={{ marginTop: 0 }}>Event Log</h2>
-
-                {events.length === 0 ? (
-                  <p style={{ color: "#94a3b8" }}>No events recorded</p>
-                ) : (
-                  events.map((event, index) => (
-                    <p key={index} style={{ margin: "8px 0", color: "#f59e0b", fontSize: "18px" }}>
-                      {event.time} - {event.message}
-                    </p>
-                  ))
-                )}
-              </div>
-            </div>
-          </>
-        ) : (
-          <p>Loading data...</p>
+             <TechStat label="ΔP (Variation)" value={data.features?.deltaP} unit="W" />
+             <TechStat label="σP (Std Dev)" value={data.features?.sigmaP} unit="W" />
+             <TechStat label="AI Distance" value={data.features?.ai_distance} unit="dist" />
+             <TechStat label="THD" value={data.thd} unit="%" />
+          </div>
         )}
+      </div>
+
+      <style>{`
+        @keyframes pulse { 50% { opacity: 0.7; transform: scale(1.02); } }
+      `}</style>
+    </div>
+  );
+}
+
+function TechStat({ label, value, unit }) {
+  return (
+    <div>
+      <p style={{ color: "#64748b", margin: 0, fontSize: "14px", fontWeight: "bold", textTransform: "uppercase" }}>{label}</p>
+      <p style={{ fontSize: "28px", fontWeight: "bold", margin: "5px 0 0 0" }}>
+        {value !== undefined && value !== null ? (typeof value === 'number' ? value.toFixed(2) : value) : "0.00"}
+        <span style={{ fontSize: "14px", color: "#475569", marginLeft: "4px" }}>{unit}</span>
+      </p>
+    </div>
+  );
+}
+
+function GaugeCard({ title, value, unit, min, max, color, peakMin, peakMax }) {
+  const safeValue = value ?? 0;
+  const percent = Math.min(Math.max((safeValue - min) / (max - min), 0), 1);
+  const angle = 180 + (percent * 180);
+
+  return (
+    <div style={{ background: "#0f172a", padding: "30px", borderRadius: "30px", border: "1px solid #1e293b", textAlign: "center" }}>
+      <p style={{ margin: "0 0 20px 0", color: "#94a3b8", fontSize: "16px", fontWeight: "800", textTransform: "uppercase", letterSpacing: "1px" }}>{title}</p>
+      {/* Min/Max Labels */}
+      {(peakMin !== undefined || peakMax !== undefined) && (
+        <div style={{ display: "flex", justifyContent: "space-between", fontSize: "12px", color: "#64748b", marginBottom: "10px" }}>
+          <span>MIN: {peakMin?.toFixed(1) || "0"}</span>
+          <span>MAX: {peakMax?.toFixed(1) || "0"}</span>
+        </div>
+      )} 
+
+      <svg width="240" height="150" viewBox="0 0 200 120">
+        <path d="M 25 100 A 75 75 0 0 1 175 100" fill="none" stroke="#1e293b" strokeWidth="18" strokeLinecap="round" />
+        <path d="M 25 100 A 75 75 0 0 1 175 100" fill="none" stroke={color} strokeWidth="18" strokeLinecap="round" strokeDasharray="235" strokeDashoffset={235 - (235 * percent)} style={{transition: "all 0.6s cubic-bezier(0.4, 0, 0.2, 1)"}} />
+        <line x1="100" y1="100" x2={100 + 65 * Math.cos(angle * Math.PI / 180)} y2={100 + 65 * Math.sin(angle * Math.PI / 180)} stroke="white" strokeWidth="5" strokeLinecap="round" style={{transition: "all 0.6s ease"}} />
+        <circle cx="100" cy="100" r="8" fill="white" />
+      </svg>
+      <div style={{ marginTop: "-35px" }}>
+        <span style={{ fontSize: "48px", fontWeight: "900" }}>{safeValue.toFixed(1)}</span>
+        <span style={{ fontSize: "18px", color: "#64748b", marginLeft: "8px" }}>{unit}</span>
       </div>
     </div>
   );
