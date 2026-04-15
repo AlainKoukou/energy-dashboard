@@ -73,9 +73,6 @@ function normalizePacket(data) {
   // Q = sqrt(S^2 - P^2)
   const q_reactive = Math.sqrt(Math.max(0, Math.pow(s_apparent, 2) - Math.pow(currentPower, 2)));
 
-  // 5. Edge-AI Three-State Logic (Normal / Unknown / Anomaly)
-  // We use a simulated AI Distance score (0.0 to 1.0)
-  const aiDist = Number(data.ai_distance ?? (0.2 + Math.random() * 0.5)); 
   
   let systemStatus = "Normal";
   let faultType = "";
@@ -88,12 +85,6 @@ if (data.anomalies?.voltage) {
 } else if (sigmaP > 150) { // Using the relaxed threshold we discussed
   systemStatus = "Anomaly";
   faultType = "UNSTABLE POWER LOAD";
-} else if (aiDist > 0.8) {
-  systemStatus = "Anomaly";
-  faultType = "AI CRITICAL DISTANCE";
-} else if (aiDist > 0.55) {
-  systemStatus = "Unknown";
-  faultType = "UNKNOWN PATTERN";
 }
   return {
     system_status: systemStatus,
@@ -120,7 +111,6 @@ if (data.anomalies?.voltage) {
       sigmaP: parseFloat(sigmaP.toFixed(2)),
       s_apparent: parseFloat(s_apparent.toFixed(2)),
       q_reactive: parseFloat(q_reactive.toFixed(2)),
-      ai_distance: parseFloat(aiDist.toFixed(3)) 
     },
 
     anomalies: {
@@ -172,7 +162,7 @@ client.on("message", (topic, message) => {
       irms: rawData.electrical_metrics.irms_amps,
       power: rawData.electrical_metrics.active_power_watts,
       energy: rawData.electrical_metrics.energy_wh,
-      anomalies: rawData.anomalies // This comes from your AI agent
+      anomalies: rawData.anomalies
     } : rawData;
     
     processIncomingPacket(rawData, "MQTT");
