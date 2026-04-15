@@ -15,6 +15,8 @@ const io = require("socket.io")(server, {
 
 // MQTT connection
 
+const MQTT_TOPIC = process.env.MQTT_TOPIC || "cce3/device01/telemetry";
+
 const client = mqtt.connect(process.env.MQTT_BROKER_URL || "mqtt://localhost:1883", {
   connectTimeout: 5000, // Stop trying after 5 seconds
   reconnectPeriod: 10000 // Only try again every 10 seconds
@@ -165,7 +167,7 @@ client.on("message", (topic, message) => {
       anomalies: rawData.anomalies
     } : rawData;
     
-    processIncomingPacket(rawData, "MQTT");
+    processIncomingPacket(dataToProcess, "MQTT");
   } catch (error) {
     console.error("Invalid MQTT message received:", error.message);  }
 });
@@ -237,6 +239,6 @@ io.on("connection", (socket) => {
 
 const PORT = process.env.PORT || 3000;
 
-server.listen(PORT, () => {
+server.listen(PORT,'0.0.0.0', () => {
   console.log("Server running on port", PORT);
 });
