@@ -5,6 +5,7 @@ const cors = require("cors");
 const mqtt = require("mqtt");
 const app = express();
 const server = http.createServer(app);
+const MQTT_TOPIC = "cce3/device01/telemetry";
 
 const io = require("socket.io")(server, {
   cors: {
