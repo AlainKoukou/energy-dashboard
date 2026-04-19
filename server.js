@@ -157,24 +157,29 @@ client.on("connect", () => {
 client.on("message", (topic, message) => {
   try {
     const rawData = JSON.parse(message.toString());
-    const dataToProcess = rawData.electrical_metrics ? {
-      timestamp: rawData.timestamp_utc,
-      vrms: rawData.electrical_metrics.vrms_volts,
-      irms: rawData.electrical_metrics.irms_amps,
-      power: rawData.electrical_metrics.active_power_watts,
-      energy: rawData.electrical_metrics.energy_wh,
-      anomalies: rawData.anomalies // This comes from your AI agent
-    } : rawData;
     
-    processIncomingPacket(rawData, "MQTT");
+    // 1. Correctly map his professional JSON to your internal variable names
+    const dataToProcess = {
+      timestamp: rawData.timestamp_utc,
+      vrms: rawData.electrical_metrics?.vrms_volts || 0,
+      irms: rawData.electrical_metrics?.irms_amps || 0,
+      power: rawData.electrical_metrics?.active_power_watts || 0,
+      energy: rawData.electrical_metrics?.energy_wh || 0,
+      power_factor: rawData.electrical_metrics?.power_factor || 0,
+      // Mapping the "anomaly" object from his JSON
+      anomalies: {
+        voltage: rawData.anomaly?.severity === "critical" || false, 
+        powerSpike: rawData.anomaly?.flag || false
+      }
+    };
+    
+  
+    processIncomingPacket(dataToProcess, "MQTT");
+    
   } catch (error) {
-    console.error("Invalid MQTT message received:", error.message);  }
+    console.error("Invalid MQTT message received:", error.message);
+  }
 });
-
-client.on("error", (error) => {
-  console.error("MQTT connection error:", error.message);
-});
-
 
 // Home route
 app.get("/", (req, res) => {
