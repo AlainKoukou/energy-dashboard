@@ -23,8 +23,6 @@ socket.on("connect", () => {
             power: parseFloat(power.toFixed(2)),
             energy: parseFloat(cumulativeEnergy.toFixed(4)),
             power_factor: parseFloat(power_factor.toFixed(2)),
-            frequency: 50.01,
-            thd: 1.2,
             anomalies: {
                 powerSpike: power > 1500,
                 voltageTrip: vrms > 224.5

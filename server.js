@@ -135,7 +135,7 @@ client.on("message", (topic, message) => {
   try {
     const rawData = JSON.parse(message.toString());
     
-    // Map the nested Professional JSON from the Arduino
+    // Map the nested Professional JSON from the Arduino-- take sample from hasan 
     const dataToProcess = {
       timestamp: rawData.timestamp_utc,
       vrms: rawData.electrical_metrics?.vrms_volts || 0,
@@ -147,7 +147,7 @@ client.on("message", (topic, message) => {
         sigmaP: rawData.features?.std_current || 0, // Mapping std_current to sigmaP
       },
       anomalies: {
-        voltage: rawData.anomaly?.severity === "high" || false, 
+        voltage: rawData.anomaly?.severity === "high" || rawData.anomaly?.severity === "critical", 
         powerSpike: rawData.anomaly?.flag || false
       }
     };
