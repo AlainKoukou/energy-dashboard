@@ -52,6 +52,7 @@ function normalizePacket(data) {
   const vrms = Number(data.vrms ?? 0);
   const irms = Number(data.irms ?? 0);
   const energyWh = Number(data.energy ?? 0) * 1000;
+  const powerInstability =Number(data.powerInstability ?? 0);
   if (vrms > 0) {
     minMaxStore.vrms.min = Math.min(minMaxStore.vrms.min, vrms);
     minMaxStore.vrms.max = Math.max(minMaxStore.vrms.max, vrms);
@@ -63,11 +64,6 @@ function normalizePacket(data) {
   const deltaP = currentPower - lastPower;
   lastPower = currentPower;
 
-  // 3. Sigma P Calculation (Standard Deviation)
-  powerBuffer.push(currentPower);
-  if (powerBuffer.length > 10) powerBuffer.shift();
-  const avg = powerBuffer.reduce((a, b) => a + b, 0) / powerBuffer.length;
-  const sigmaP = Math.sqrt(powerBuffer.map(x => Math.pow(x - avg, 2)).reduce((a, b) => a + b, 0) / powerBuffer.length);
 
   // 4. Advanced Electrical Math (S and Q)
   const s_apparent = vrms * irms;
@@ -83,10 +79,8 @@ if (data.anomalies?.voltage) {
 } else if (data.anomalies?.powerSpike) {
   systemStatus = "Anomaly";
   faultType = "POWER SURGE";
-} else if (sigmaP > 150) { // Using the relaxed threshold we discussed
-  systemStatus = "Anomaly";
-  faultType = "UNSTABLE POWER LOAD";
-}
+} 
+
   return {
     system_status: systemStatus,
     fault_type: faultType,
@@ -118,7 +112,7 @@ if (data.anomalies?.voltage) {
       voltage: !!data.anomalies?.voltage,
       current: !!data.anomalies?.current,
       powerSpike: !!data.anomalies?.powerSpike,
-      powerInstability: sigmaP > 150,
+      powerInstability: !!data.anomalies?.powerInstability,
       sensorFault: !!data.anomalies?.sensorFault,
       energyAnomaly: !!data.anomalies?.energyAnomaly
     }
@@ -168,7 +162,7 @@ client.on("message", (topic, message) => {
       power_factor: rawData.electrical_metrics?.power_factor || 0,
       // Mapping the "anomaly" object from his JSON
       anomalies: {
-        voltage: rawData.anomaly?.severity === "critical" || false, 
+        voltage: rawData.anomaly?.severity === "high" || false, 
         powerSpike: rawData.anomaly?.flag || false
       }
     };
