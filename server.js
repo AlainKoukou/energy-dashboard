@@ -46,6 +46,7 @@ function normalizePacket(data) {
   const irms = Number(data.irms ?? 0);
   const currentPower = Number(data.power ?? 0);
   const energyWh = Number(data.energy ?? 0); 
+  const energyKWh = energyWh / 1000;
 
   // Update Peaks
   if (vrms > 0) {
@@ -72,7 +73,7 @@ function normalizePacket(data) {
     vrms: vrms,
     irms: irms,
     power: currentPower,
-    energy: energyWh,
+    energy: Number(energyKWh.toFixed(3)_),
     system_status: systemStatus,
     fault_type: faultType,
     power_factor: Number(data.power_factor ?? 0),
