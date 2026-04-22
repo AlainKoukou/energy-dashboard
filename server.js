@@ -30,9 +30,9 @@ const MAX_HISTORY = 50;
 let lastPower = 0; 
 
 let minMaxStore = {
-  vrms: { min: 200, max: 260 },
+  vrms: { min: 0, max: 460 },
   irms: { min: 0, max: 10 },
-  power: { min: 0, max: 2000 }
+  power: { min: 0, max: 4600 }
 };
 
 // 4. MIDDLEWARE
@@ -45,7 +45,7 @@ function normalizePacket(data) {
   const vrms = Number(data.vrms ?? 0);
   const irms = Number(data.irms ?? 0);
   const currentPower = Number(data.power ?? 0);
-  const energyWh = Number(data.energy ?? 0); // Assuming already in Wh from Arduino
+  const energyWh = Number(data.energy ?? 0); 
 
   // Update Peaks
   if (vrms > 0) {
@@ -154,7 +154,7 @@ client.on("message", (topic, message) => {
     
     processIncomingPacket(dataToProcess, "MQTT");
   } catch (error) {
-    console.error("Invalid MQTT message received:", error.message);
+    console.error("Invalid MQTT message received:", error.message, "Raw data length:", message.length);
   }
 });
 
