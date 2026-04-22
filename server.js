@@ -73,7 +73,7 @@ function normalizePacket(data) {
     vrms: vrms,
     irms: irms,
     power: currentPower,
-    energy: Number(energyKWh.toFixed(3)_),
+    energy: Number(energyKWh.toFixed(3)),
     system_status: systemStatus,
     fault_type: faultType,
     power_factor: Number(data.power_factor ?? 0),
