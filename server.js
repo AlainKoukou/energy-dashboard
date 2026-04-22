@@ -32,7 +32,7 @@ let lastPower = 0;
 let minMaxStore = {
   vrms: { min: 0, max: 460 },
   irms: { min: 0, max: 10 },
-  power: { min: 0, max: 4600 }
+  power: { min: 0, max: 5 }
 };
 
 // 4. MIDDLEWARE
