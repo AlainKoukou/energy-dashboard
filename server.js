@@ -44,7 +44,7 @@ app.use(express.json());
 function normalizePacket(data) {
   const vrms = Number(data.vrms ?? 0);
   const irms = Number(data.irms ?? 0);
-  const currentPower = Number(data.power ?? 0);
+  const currentPower = Number(data.power ?? 0) / 1000;
   const energyWh = Number(data.energy ?? 0); 
   const energyKWh = energyWh / 1000;
 
@@ -76,7 +76,7 @@ function normalizePacket(data) {
     energy: Number(energyKWh.toFixed(3)),
     system_status: systemStatus,
     fault_type: faultType,
-    power_factor: Number(data.power_factor ?? 0),
+    power_factor: Number(data.power_factor ??
     frequency: Number(data.frequency ?? 0),
     thd: Number(data.thd ?? 0),
     peaks: {
