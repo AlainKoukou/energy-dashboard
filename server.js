@@ -76,7 +76,7 @@ function normalizePacket(data) {
     energy: Number(energyKWh.toFixed(3)),
     system_status: systemStatus,
     fault_type: faultType,
-    power_factor: Number(data.power_factor ??
+    power_factor: Number(data.power_factor ?? 0),
     frequency: Number(data.frequency ?? 0),
     thd: Number(data.thd ?? 0),
     peaks: {
