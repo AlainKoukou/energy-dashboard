@@ -44,7 +44,7 @@ app.use(express.json());
 function normalizePacket(data) {
   const vrms = Number(data.vrms ?? 0);
   const irms = Number(data.irms ?? 0);
-  const currentPower = Number(data.power ?? 0);
+  const currentPower = Number(data.power ?? 0)/1000;
   const energyWh = Number(data.energy ?? 0); 
   const energyKWh = energyWh / 1000;
 
