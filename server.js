@@ -32,7 +32,7 @@ let lastPower = 0;
 let minMaxStore = {
   vrms: { min: 0, max: 460 },
   irms: { min: 0, max: 10 },
-  power: { min: 0, max: 5 }
+  power: { min: 0, max: 2600 }
 };
 
 // 4. MIDDLEWARE
@@ -44,7 +44,7 @@ app.use(express.json());
 function normalizePacket(data) {
   const vrms = Number(data.vrms ?? 0);
   const irms = Number(data.irms ?? 0);
-  const currentPower = Number(data.power ?? 0)/1000;
+  const currentPower = Number(data.power ?? 0);
   const energyWh = Number(data.energy ?? 0); 
   const energyKWh = energyWh / 1000;
 
@@ -89,7 +89,7 @@ function normalizePacket(data) {
     features: {
       deltaP: Number(data.features?.deltaP ?? 0),
       sigmaP: Number(data.features?.sigmaP ?? 0),
-      s_apparent: Number(data.features?.s_apparent ?? 0),
+      s_apparent: Number(data.features?.S_apparent ?? 0),
       q_reactive: Number(data.features?.q_reactive ?? 0),
     },
     anomalies: {
@@ -142,14 +142,19 @@ client.on("message", (topic, message) => {
       vrms: rawData.electrical_metrics?.vrms_volts || 0,
       irms: rawData.electrical_metrics?.irms_amps || 0,
       power: rawData.electrical_metrics?.active_power_watts || 0,
-      energy: rawData.electrical_metrics?.energy_wh || 0,
+      energy: rawData.electrical_metrics?.energy_kwh || 0,
       power_factor: rawData.electrical_metrics?.power_factor || 0,
       features: {
-        sigmaP: rawData.features?.std_current || 0, // Mapping std_current to sigmaP
+        sigmaP: rawData.features?.std_current || 0, 
+        S_appearent: rawData.electrical_metrics?.apparent_power_va || 0,
+        q_reactive: rawData.electrical_metrics?.reactive_power_var || 0,
+        crest_factor: rawData.features?.crest_factor_current || 0
       },
       anomalies: {
-        voltage: rawData.anomaly?.severity === "high" || rawData.anomaly?.severity === "critical", 
-        powerSpike: rawData.anomaly?.flag || false
+        voltage: rawData.anomaly?.severity === "critical", 
+        powerSpike: rawData.anomaly?.flag || false,
+        ai_state: rawData.anomaly?.state || "unknown",
+        ai_distance: rawData.anomaly?.distance || 0
       }
     };
     
