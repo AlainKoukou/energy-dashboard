@@ -91,6 +91,8 @@ function normalizePacket(data) {
       sigmaP: Number(data.features?.sigmaP ?? 0),
       s_apparent: Number(data.features?.S_apparent ?? 0),
       q_reactive: Number(data.features?.q_reactive ?? 0),
+      ai_distance: Number(data.anomalies?.ai_distance ?? 0)
+
     },
     anomalies: {
       voltage: !!data.anomalies?.voltage,
@@ -100,7 +102,6 @@ function normalizePacket(data) {
       sensorFault: !!data.anomalies?.sensorFault,
       energyAnomaly: !!data.anomalies?.energyAnomaly,
       ai_state: data.anomalies?.ai_state || "unknown",
-      ai_distance: Number(data.anomalies?.ai_distance ?? 0)
     }
   };
 }
@@ -159,7 +160,10 @@ client.on("message", (topic, message) => {
         ai_state: rawData.anomaly?.state || "unknown",
       }
     };
-    
+    console.log("------------------------------------");
+    console.log("Raw anomaly.distance from Arduino:", rawData.anomaly?.distance);
+    console.log("Mapped ai_distance for Dashboard:", dataToProcess.features.ai_distance);
+    console.log("------------------------------------");
     processIncomingPacket(dataToProcess, "MQTT");
   } catch (error) {
     console.error("Invalid MQTT message received:", error.message, "Raw data length:", message.length);
