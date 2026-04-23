@@ -155,7 +155,6 @@ client.on("message", (topic, message) => {
         voltage: rawData.anomaly?.severity === "critical", 
         powerSpike: rawData.anomaly?.flag || false,
         ai_state: rawData.anomaly?.state || "unknown",
-        ai_distance: rawData.anomaly?.distance || 0
       }
     };
     
