@@ -180,12 +180,9 @@ function App() {
              <TechStat label="Power Factor (PF)" value={data.power_factor} unit="" />
              <TechStat label="Apparent Power (S)" value={data.features?.s_apparent} unit="VA" />
              <TechStat label="Reactive Power (Q)" value={data.features?.q_reactive} unit="VAR" />
-             <TechStat label="System Frequency" value={data.frequency} unit="Hz" />
-
              <TechStat label="ΔP (Variation)" value={data.features?.deltaP} unit="W" />
              <TechStat label="σP (Std Dev)" value={data.features?.sigmaP} unit="W" />
              <TechStat label="AI Distance" value={data.features?.ai_distance} unit="dist" />
-             <TechStat label="THD" value={data.thd} unit="%" />
           </div>
         )}
       </div>

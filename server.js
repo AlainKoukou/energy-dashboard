@@ -148,7 +148,7 @@ client.on("message", (topic, message) => {
       power_factor: rawData.electrical_metrics?.power_factor || 0,
       features: {
         sigmaP: rawData.features?.std_current || 0, 
-        S_appearent: rawData.electrical_metrics?.apparent_power_va || 0,
+        S_apparent: rawData.electrical_metrics?.apparent_power_va || 0,
         q_reactive: rawData.electrical_metrics?.reactive_power_var || 0,
         ai_distance: rawData. anomaly?.distance || 0,
         crest_factor: rawData.features?.crest_factor_current || 0
