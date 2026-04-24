@@ -91,7 +91,7 @@ function normalizePacket(data) {
       sigmaP: Number(data.features?.sigmaP ?? 0),
       s_apparent: Number(data.features?.S_apparent ?? 0),
       q_reactive: Number(data.features?.q_reactive ?? 0),
-      ai_distance: Number(data.anomalies?.ai_distance ?? 0)
+      ai_distance: Number(data.features?.ai_distance ?? 0)
 
     },
     anomalies: {
@@ -151,12 +151,12 @@ client.on("message", (topic, message) => {
         sigmaP: rawData.features?.std_current || 0, 
         S_apparent: rawData.electrical_metrics?.apparent_power_va || 0,
         q_reactive: rawData.electrical_metrics?.reactive_power_var || 0,
-        ai_distance: rawData. anomaly?.distance || 0,
+        ai_distance: rawData.anomaly?.distance || 0,
         crest_factor: rawData.features?.crest_factor_current || 0,
         deltaP: rawData.features?.delta_p_watts || 0
       },
       anomalies: {
-        voltage: rawData.anomaly?.severity === "critical", 
+        voltage: rawData.anomaly?.severity === "high", 
         powerSpike: rawData.anomaly?.flag || false,
         ai_state: rawData.anomaly?.state || "unknown",
       }
