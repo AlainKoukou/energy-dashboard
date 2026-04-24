@@ -104,7 +104,7 @@ function App() {
         <GaugeCard title="Voltage" value={data.vrms} unit="V" min={210} max={250} color="#3b82f6" peakMin={data.peaks?.v_min} peakMax={data.peaks?.v_max}/>
         <GaugeCard title="Current (Irms)" value={data.irms} unit="A" min={0} max={10} color="#10b981" peakMin={data.peaks?.i_min} peakMax={data.peaks?.i_max} />
         <GaugeCard title="Active Power" value={data.power} unit="W" min={0} max={2500} color="#f59e0b" peakMax={data.peaks?.p_max} />
-        <GaugeCard title="Total Energy" value={data.energy} unit="kWh" min={0} max={100} color="#8b5cf6" />
+        <GaugeCard title="Total Energy" value={data.energy} unit="Wh" min={0} max={5000} color="#8b5cf6" />
       </div>
 
       <div style={{ display: "grid", gridTemplateColumns: "1.5fr 1fr", gap: "30px", marginBottom: "40px" }}>
