@@ -152,7 +152,8 @@ client.on("message", (topic, message) => {
         S_apparent: rawData.electrical_metrics?.apparent_power_va || 0,
         q_reactive: rawData.electrical_metrics?.reactive_power_var || 0,
         ai_distance: rawData. anomaly?.distance || 0,
-        crest_factor: rawData.features?.crest_factor_current || 0
+        crest_factor: rawData.features?.crest_factor_current || 0,
+        deltaP: rawData.features?.delta_p_kw || 0
       },
       anomalies: {
         voltage: rawData.anomaly?.severity === "critical", 
