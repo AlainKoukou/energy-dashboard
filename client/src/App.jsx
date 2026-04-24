@@ -229,7 +229,7 @@ function GaugeCard({ title, value, unit, min, max, color, peakMin, peakMax }) {
         <circle cx="100" cy="100" r="8" fill="white" />
       </svg>
       <div style={{ marginTop: "-35px" }}>
-        <span style={{ fontSize: "48px", fontWeight: "900" }}>{safeValue.toFixed(1)}</span>
+        <span style={{ fontSize: "48px", fontWeight: "900" }}>{parseFloat(safeValue).toFixed(3)}</span>
         <span style={{ fontSize: "18px", color: "#64748b", marginLeft: "8px" }}>{unit}</span>
       </div>
     </div>
