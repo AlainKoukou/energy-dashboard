@@ -116,7 +116,7 @@ function processIncomingPacket(rawData, source = "unknown") {
   // The "Shout" to the frontend
   io.emit("data:update", packet);
 
-  // LOGGING (Requested by teammate)
+  // LOGGING 
   console.log(`[${source}] Received data:`, packet);
   
   return packet;
